@@ -28,6 +28,53 @@ def load_zone_definitions(filename):
         return None
 
 
+def load_renewable_pv(filename, sep=","):
+    """
+    Load PV data from a CSV file.
+    Assumes the file has 4 header rows to skip and that column C (index 2)
+    contains the "electricity" data in Watts, which must be converted to MW.
+    """
+    try:
+        df = pd.read_csv(filename, sep=sep, skiprows=4)
+        # Convert column C from Watts to kW (divide by 1000)
+        df["PV"] = df.iloc[:, 2] / 1000000
+        return df[["PV"]]
+    except Exception as e:
+        print(f"Error loading PV data: {e}")
+        return None
+
+
+def load_renewable_wind(filename, sep=";"):
+    """
+    Load Wind data from a CSV file.
+    Assumes the file has 4 header rows to skip and that column C (index 2)
+    contains the "electricity" data in kW.
+    """
+    try:
+        df = pd.read_csv(filename, sep=sep, skiprows=4)
+        df["Wind"] = df.iloc[:, 2]
+        return df[["Wind"]]
+    except Exception as e:
+        print(f"Error loading Wind data: {e}")
+        return None
+
+
+def load_renewable_heating_cooling(filename, sep=";"):
+    """
+    Load Heating and Cooling data from a CSV file.
+    Assumes the file has 4 header rows to skip.
+    Column D (index 3) contains Heating data and column E (index 4) contains Cooling data, both in kW.
+    """
+    try:
+        df = pd.read_csv(filename, sep=sep, skiprows=4)
+        df["Heating"] = df.iloc[:, 3]
+        df["Cooling"] = df.iloc[:, 4]
+        return df[["Heating", "Cooling"]]
+    except Exception as e:
+        print(f"Error loading Heating/Cooling data: {e}")
+        return None
+
+
 def merge_loads(dataframe, load_dictionary, merge_mapping):
     """
     Merge specified columns in the DataFrame and update the load_dictionary accordingly.
@@ -86,7 +133,7 @@ merge_map = {
         }
 }
 
-# Run merge loads function
+# Run merge loads function - optional
 # df, load_dict = merge_loads(df,load_dict,merge_map)
 
 # Create a time column measured in seconds
