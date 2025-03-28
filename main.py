@@ -19,6 +19,7 @@ def load_zone_definitions(filename):
     """
     try:
         dataframe = pd.read_csv(filename, sep=",")
+
         load_dictionary = {row['Name']: {'max_power': row['Max Power'], 'profile': row['Profile'],
                                          'load_type': row['Load Type'], 'units': row['Units']}
                            for idx, row in dataframe.iterrows()}
