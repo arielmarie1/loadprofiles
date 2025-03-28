@@ -1,0 +1,9 @@
+﻿Name,Max Power,Profile,Load Type,Units
+Command,0.3117,1,load,MW
+Communication,0.1173,2,load,MW
+Healthcare,0.6995,1,load,MW
+Living,1.4279,6,load,MW
+Periphery,0.2035,2,load,MW
+CentralGen,0.284,4,load,MW
+Maintenance,0.07,1,load,MW
+Waste,0.13,4,load,MW
