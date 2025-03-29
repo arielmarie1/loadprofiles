@@ -7,24 +7,26 @@ STEPS_PER_DAY = 24  # Number of time steps in a day (typically measured in hours
 NB_STEPS = 8760  # Based on time steps but typically measured in hours
 
 
-def load_zone_definitions(filename):
+def load_renewables(filename, names, indices, dataframe, load_dictionary, divider,
+                    sep=",", skiprows=3, load_type="load", units="MW"):
     """
-    The Excel file should have a header row with the following columns:
-      - 'Name' for the zone name (e.g., "Command")
-      - 'Max Power' for the maximum power value (e.g., 0.3117)
-      - 'Profile' for the profile number (e.g., 1, 2, etc.)
-      - 'Load Type' for the load type (e.g "load" "Generation", "Massflow")
-      - 'Units' for the units used (e.g "MW", "kg/hr")
-    Returns a dictionary where each key is a zone name and its value is a dictionary containing the pre-stated columns.
+    Load data from a CSV file downloaded from Renewables Ninja.
+    Assumes the file has header rows to skip and that column C (index 2, 3 or 4)
+    contains the "electricity" data in Watts or kW, which must be converted to MW using divider value.
     """
     try:
-        dataframe = pd.read_csv(filename, sep=",")
-        load_dictionary = {row['Name']: {'max_power': row['Max Power'], 'profile': row['Profile'],
-                                         'load_type': row['Load Type'], 'units': row['Units']}
-                           for idx, row in dataframe.iterrows()}
-        return load_dictionary
+        df_RE = pd.read_csv(filename, sep=sep, skiprows=skiprows)
+        for name, idx in zip(names, indices):
+            dataframe[name] = df_RE.iloc[:, idx] / float(divider)
+            load_dictionary[name] = {
+                "max_power": None,  # Not used in header creation
+                "profile": None,  # Not used in header creation
+                "load_type": load_type,
+                "units": units
+            }
+        return dataframe, load_dictionary
     except Exception as e:
-        print(f"Error reading zone definitions from {filename}: {e}")
+        print(f"Error loading RE data: {e}")
         return None
 
 
@@ -62,22 +64,87 @@ def merge_loads(dataframe, load_dictionary, merge_mapping):
     return dataframe, load_dictionary
 
 
-load_dict = load_zone_definitions("Loads.csv")
+def generate_loads(filename, dataframe, load_dictionary,
+                   rand_min, rand_max, nb_steps, steps_per_day, profile_dataframe):
+    """
+        The Excel file should have a header row with the following columns:
+          - 'Name' for the zone name (e.g., "Command")
+          - 'Max Power' for the maximum power value (e.g., 0.3117)
+          - 'Profile' for the profile number (e.g., 1, 2, etc.)
+          - 'Load Type' for the load type (e.g "load" "Generation", "Massflow")
+          - 'Units' for the units used (e.g "MW", "kg/hr")
+        Returns a dictionary where each key is "Name" and its value is a dictionary of the above-mentioned columns.
+        Returns a dataframe with the generated loads.
+        """
+    try:
+        df_orig = pd.read_csv(filename, sep=",")
+        for idx, row in df_orig.iterrows():
+            load_dictionary[row['Name']] = {
+                'max_power': row['Max Power'],
+                'profile': row['Profile'],
+                'load_type': row['Load Type'],
+                'units': row['Units']
+            }
+        for name, params in load_dictionary.items():
+            # Check for a valid profile before processing.
+            if params['profile'] is None:
+                continue
+            load_list = []
+            num_days = int(nb_steps / steps_per_day)
+            profile_series = profile_dataframe.iloc[:, int(params['profile']) - 1]
+            max_power = params['max_power']
+            for day in range(num_days):
+                # profile = profile_df[load_dictionary[name]['profile']]
+                # max_power = load_dictionary[name]['max_power']
+                load = [item * random.uniform(rand_min, rand_max) * max_power / 100 for item in profile_series]
+                load_list.extend(load)
+            new_df = pd.DataFrame.from_dict({f"{name}": load_list})
+            dataframe = pd.concat([dataframe, new_df], axis=1)
+        return dataframe, load_dictionary
+    except Exception as e:
+        print(f"Error reading zone definitions from {filename}: {e}")
+        return None
+
+
+def add_headers(dataframe, load_dictionary, start_date):
+    # Row 1: Column Names (Time, followed by each zone)
+    # Row 2: Description (example: start time for the start date for Time, and "load" for others)
+    # Row 3: Units ("s" for time, "MW" for loads)
+    # Row 4: TRUE/FALSE flags (all "true" in this example)
+    header1 = dataframe.columns.to_list()
+    header2 = [start_date] + [load_dictionary[col]['load_type'] for col in dataframe.columns[1:]]
+    header3 = ["s"] + [load_dictionary[col]['units'] for col in dataframe.columns[1:]]
+    header4 = ["true"] * len(dataframe.columns)
+    final = pd.DataFrame([header1, header2, header3, header4])
+    for i in range(len(dataframe.index)):
+        final.loc[len(final)] = (dataframe.iloc[i].tolist())
+    # Convert the time column in the data portion (after the header rows) to integer
+    final.iloc[4:, 0] = final.iloc[4:, 0].astype(int)
+    return final
+
+
+df = pd.DataFrame({"Time": [int((i+1) * SEC_INTERVAL) for i in range(NB_STEPS)]})
+load_dict = {}
+
+# Download generic load profiles
 profile_df = pd.read_excel('profili.xlsx')
 
-# Create new column in dataframe for each functional zone defined by the file name
-df = pd.DataFrame()
-for name in load_dict:
-    load_list = []
-    for i in range(int(NB_STEPS / STEPS_PER_DAY)):
-        profile = profile_df[load_dict[name]['profile']]
-        max_power = load_dict[name]['max_power']
-        load = [item * random.uniform(0.8, 1.1) * max_power / 100 for item in profile]
-        load_list.extend(load)
-    new_df = pd.DataFrame.from_dict({f"{name}": load_list})
-    df = pd.concat([df, new_df], axis=1)
+# Add load profiles from excel file
+df, load_dict = generate_loads("Loads.csv",
+                               df, load_dict,
+                               0.8, 1.1,
+                               NB_STEPS, STEPS_PER_DAY,
+                               profile_df)
 
-# Testing new merging loads capability
+# Add data from renewables ninja
+df, load_dict = load_renewables("ninja_pv.csv", ["PV"], [2],
+                                df, load_dict, 10000000, load_type="Generation")
+df, load_dict = load_renewables("ninja_wind.csv", ["Wind"], [2],
+                                df, load_dict, 1000, load_type="Generation")
+df, load_dict = load_renewables("ninja_demand.csv", ["Heating", "Cooling"], [3, 4],
+                                df, load_dict, 1000)
+
+# Optional merge loads capability
 merge_map = {
     "Merged_Load": {
         "columns_idx": [0, 2],
@@ -85,32 +152,11 @@ merge_map = {
         "units": "MW"
         }
 }
-
-# Run merge loads function
+# Run merge loads function  (optional)
 # df, load_dict = merge_loads(df,load_dict,merge_map)
 
-# Create a time column measured in seconds
-time = [(i+1) * int(SEC_INTERVAL) for i in range(NB_STEPS)]
-time_df = pd.DataFrame.from_dict({"Time": time})
-
-# Concatenate time column with the data
-final_df = pd.concat([time_df, df], axis=1)
-
-# Row 1: Column Names (Time, followed by each zone)
-# Row 2: Description (example: start time for the start date for Time, and "load" for others)
-# Row 3: Units ("s" for time, "MW" for loads)
-# Row 4: TRUE/FALSE flags (all "true" in this example)
-header1 = final_df.columns.to_list()
-header2 = [START_DATE] + [load_dict[col]['load_type'] for col in final_df.columns[1:]]
-header3 = ["s"] + [load_dict[col]['units'] for col in final_df.columns[1:]]
-header4 = ["true"] * len(final_df.columns)
-final = pd.DataFrame([header1, header2, header3, header4])
-
-for i in range(len(final_df.index)):
-    final.loc[len(final)] = (final_df.iloc[i].tolist())
-
-# Convert the time column in the data portion (after the header rows) to integer
-final.iloc[4:, 0] = final.iloc[4:, 0].astype(int)
+# Add PERSEE required descriptive headers
+df = add_headers(df, load_dict, START_DATE)
 
 # Save final DataFrame
-final.to_csv("Test_dataseries.csv", sep=";", index=False, header=False)
+df.to_csv("Test_dataseries.csv", sep=";", index=False, header=False)
