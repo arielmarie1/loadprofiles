@@ -15,9 +15,9 @@ def load_renewables(filename, names, indices, dataframe, load_dictionary, divide
     contains the "electricity" data in Watts or kW, which must be converted to MW using divider value.
     """
     try:
-        df_RE = pd.read_csv(filename, sep=sep, skiprows=skiprows)
+        df_re = pd.read_csv(filename, sep=sep, skiprows=skiprows)
         for name, idx in zip(names, indices):
-            dataframe[name] = df_RE.iloc[:, idx] / float(divider)
+            dataframe[name] = df_re.iloc[:, idx] / float(divider)
             load_dictionary[name] = {
                 "max_power": None,  # Not used in header creation
                 "profile": None,  # Not used in header creation
@@ -70,7 +70,8 @@ def generate_loads(filename, dataframe, load_dictionary,
         The Excel file should have a header row with the following columns:
           - 'Name' for the zone name (e.g., "Command")
           - 'Max Power' for the maximum power value (e.g., 0.3117)
-          - 'Profile' for the profile number (e.g., 1, 2, etc.)
+          - 'Profile' for the profile number
+            (e.g., 1. Work, 2. Nonstop, 3. Recreation, 4. Utility, 5. Food, 6. Accommodation, 7. Ward, 8. Test)
           - 'Load Type' for the load type (e.g "load" "Generation", "Massflow")
           - 'Units' for the units used (e.g "MW", "kg/hr")
         Returns a dictionary where each key is "Name" and its value is a dictionary of the above-mentioned columns.
