@@ -1,5 +1,6 @@
 import pandas as pd
 import random
+from datetime import datetime, timedelta
 
 START_DATE = '2025-01-01 00;00'
 SEC_INTERVAL = 3600  # Measured in seconds
@@ -65,11 +66,12 @@ def merge_loads(dataframe, load_dictionary, merge_mapping):
 
 
 def generate_loads(filename, dataframe, load_dictionary,
-                   rand_min, rand_max, nb_steps, steps_per_day, profile_dataframe):
+                   nb_steps, steps_per_day, profile_dataframe,
+                   rand_range=(1.0, 1.0)):
     """
         The Excel file should have a header row with the following columns:
           - 'Name' for the zone name (e.g., "Command")
-          - 'Max Power' for the maximum power value (e.g., 0.3117)
+          - 'Max Power' for the maximum power value (e.g., 0.05 MW)
           - 'Profile' for the profile number
             (e.g., 1. Work, 2. Nonstop, 3. Recreation, 4. Utility, 5. Food, 6. Accommodation, 7. Ward, 8. Test)
           - 'Load Type' for the load type (e.g "load" "Generation", "Massflow")
@@ -92,12 +94,12 @@ def generate_loads(filename, dataframe, load_dictionary,
                 continue
             load_list = []
             num_days = int(nb_steps / steps_per_day)
-            profile_series = profile_dataframe.iloc[:, int(params['profile']) - 1]
+            profile_series = profile_dataframe.iloc[:, int(params['profile'])]
             max_power = params['max_power']
             for day in range(num_days):
                 # profile = profile_df[load_dictionary[name]['profile']]
                 # max_power = load_dictionary[name]['max_power']
-                load = [item * random.uniform(rand_min, rand_max) * max_power / 100 for item in profile_series]
+                load = [item * random.uniform(*rand_range) * max_power / 100 for item in profile_series]
                 load_list.extend(load)
             new_df = pd.DataFrame.from_dict({f"{name}": load_list})
             dataframe = pd.concat([dataframe, new_df], axis=1)
@@ -133,9 +135,19 @@ profile_df = pd.read_excel('profili.xlsx')
 # Add load profiles from excel file
 df, load_dict = generate_loads("Loads.csv",
                                df, load_dict,
-                               0.8, 1.1,
                                NB_STEPS, STEPS_PER_DAY,
-                               profile_df)
+                               profile_df, rand_range=(0.9, 1.1))
+
+# Optional merge loads capability
+merge_map = {
+    "Elec_Central": {
+        "columns_idx": list(range(1, len(df.columns))),
+        "load_type": "load",
+        "units": "MW"
+        }
+}
+# Run merge loads function  (optional)
+df, load_dict = merge_loads(df, load_dict, merge_map)
 
 # Add data from renewables ninja
 df, load_dict = load_renewables("ninja_pv.csv", ["PV"], [2],
@@ -145,19 +157,8 @@ df, load_dict = load_renewables("ninja_wind.csv", ["Wind"], [2],
 df, load_dict = load_renewables("ninja_demand.csv", ["Heating", "Cooling"], [3, 4],
                                 df, load_dict, 1000)
 
-# Optional merge loads capability
-merge_map = {
-    "Merged_Load": {
-        "columns_idx": [0, 2],
-        "load_type": "load",
-        "units": "MW"
-        }
-}
-# Run merge loads function  (optional)
-# df, load_dict = merge_loads(df,load_dict,merge_map)
-
 # Add PERSEE required descriptive headers
 df = add_headers(df, load_dict, START_DATE)
 
 # Save final DataFrame
-df.to_csv("Test_dataseries.csv", sep=";", index=False, header=False)
+df.to_csv("Test_dataseries.csv", sep=";", index=False, header=False, float_format='%3g')
