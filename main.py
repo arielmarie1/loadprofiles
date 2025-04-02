@@ -1,8 +1,8 @@
 import pandas as pd
 import random
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
 
-START_DATE = '2025-01-01 00;00'
+START_DATE = '2025-01-01 00:00'
 SEC_INTERVAL = 3600  # Measured in seconds
 STEPS_PER_DAY = 24  # Number of time steps in a day (typically measured in hours)
 NB_STEPS = 8760  # Based on time steps but typically measured in hours
@@ -151,7 +151,7 @@ df, load_dict = merge_loads(df, load_dict, merge_map)
 df, load_dict = generate_loads("Vehicles.csv", df, load_dict, NB_STEPS, STEPS_PER_DAY, profile_df)
 # Add data from renewables ninja
 df, load_dict = load_renewables("ninja_pv.csv", ["PV"], [2],
-                                df, load_dict, 10000000, load_type="Generation")
+                                df, load_dict, 1000000, load_type="Generation")
 df, load_dict = load_renewables("ninja_wind.csv", ["Wind"], [2],
                                 df, load_dict, 1000, load_type="Generation")
 df, load_dict = load_renewables("ninja_demand.csv", ["Heating_Central", "Cooling_Central"], [3, 4],
