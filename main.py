@@ -150,15 +150,15 @@ df, load_dict = merge_loads(df, load_dict, merge_map)
 # Add vehicle data
 df, load_dict = generate_loads("Vehicles.csv", df, load_dict, NB_STEPS, STEPS_PER_DAY, profile_df)
 # Add data from renewables ninja
-df, load_dict = load_renewables("ninja_pv_LJ.csv", ["PV"], [2],
+df, load_dict = load_renewables("ninja_pv.csv", ["PV"], [2],
                                 df, load_dict, 1000000, load_type="Generation")
-df, load_dict = load_renewables("ninja_wind_LJ.csv", ["Wind"], [2],
+df, load_dict = load_renewables("ninja_wind.csv", ["Wind"], [2],
                                 df, load_dict, 1000, load_type="Generation")
-df, load_dict = load_renewables("ninja_demand_LJ.csv", ["Heating_Central", "Cooling_Central"], [3, 4],
+df, load_dict = load_renewables("ninja_demand.csv", ["Heating_Central", "Cooling_Central"], [3, 4],
                                 df, load_dict, 1000)
 
 # Add PERSEE required descriptive headers
 df = add_headers(df, load_dict, START_DATE)
 
 # Save final DataFrame
-df.to_csv("H2_dataseries_LJ.csv", sep=";", index=False, header=False, float_format='%3g')
+df.to_csv("H2_dataseries_Ede.csv", sep=";", index=False, header=False, float_format='%3g')

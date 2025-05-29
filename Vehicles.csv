@@ -1,3 +1,5 @@
 ﻿Name,Max Power,Profile,Load Type,Units
 ElecLoadVehicles,0.0285,8,load,MW
 H2LoadVehicles,2.357865837,8,Massflow,kg/h
+DieselLoadVehicles,7.852,8,Massflow,kg/hr
+CH4LoadVehicles,12.149,8,Massflow,kg/h
