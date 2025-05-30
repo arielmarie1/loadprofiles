@@ -6,6 +6,5 @@ Accommodation,0.6,6,load,MW
 Dining,0.6,5,load,MW
 Recreation,0.1,3,load,MW
 Periphery,0.15,2,load,MW
-CentralGen,0.1,4,load,MW
 Maintenance,0.15,1,load,MW
-Waste,0.1,4,load,MW
+Waste,0.2,4,load,MW

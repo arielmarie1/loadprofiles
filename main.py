@@ -31,7 +31,7 @@ def load_renewables(filename, names, indices, dataframe, load_dictionary, divide
         return None
 
 
-def merge_loads(dataframe, load_dictionary, merge_mapping):
+def merge_loads(dataframe, load_dictionary, merge_mapping, drop_originals=True):
     """
     Merge specified columns in the DataFrame and update the load_dictionary accordingly.
     Parameters:
@@ -49,12 +49,6 @@ def merge_loads(dataframe, load_dictionary, merge_mapping):
         cols_to_merge = [dataframe.columns[j] for j in merge_info["columns_idx"]]
         # Sum the specified columns row-wise to create the new merged column
         dataframe[new_col] = dataframe[cols_to_merge].sum(axis=1)
-        # Remove the original columns from the DataFrame
-        dataframe.drop(columns=cols_to_merge, inplace=True)
-        # Remove the merged columns from load_dict (if they exist)
-        for col in cols_to_merge:
-            if col in load_dictionary:
-                del load_dictionary[col]
         # Add the new merged column to load_dict with the provided header info
         load_dictionary[new_col] = {
             "max_power": None,    # Not used in header creation
@@ -62,6 +56,15 @@ def merge_loads(dataframe, load_dictionary, merge_mapping):
             "load_type": merge_info.get("load_type", "load"),
             "units": merge_info.get("units", "MW")
         }
+        if drop_originals:
+            # Remove the original columns from the DataFrame
+            dataframe.drop(columns=cols_to_merge, inplace=True)
+
+            # Remove the original columns from load_dict (if they exist)
+            for col in cols_to_merge:
+                if col in load_dictionary:
+                    del load_dictionary[col]
+
     return dataframe, load_dictionary
 
 
@@ -145,7 +148,7 @@ merge_map = {
         }
 }
 # Run merge loads function  (optional)
-df, load_dict = merge_loads(df, load_dict, merge_map)
+df, load_dict = merge_loads(df, load_dict, merge_map, drop_originals=False)
 
 # Add vehicle data
 df, load_dict = generate_loads("Vehicles.csv", df, load_dict, NB_STEPS, STEPS_PER_DAY, profile_df)
@@ -161,4 +164,4 @@ df, load_dict = load_renewables("ninja_demand.csv", ["Heating_Central", "Cooling
 df = add_headers(df, load_dict, START_DATE)
 
 # Save final DataFrame
-df.to_csv("H2_dataseries_Ede.csv", sep=";", index=False, header=False, float_format='%3g')
+df.to_csv("Test3.csv", sep=";", index=False, header=False, float_format='%3g')
