@@ -142,7 +142,7 @@ df, load_dict = generate_loads("Loads_LJ.csv", df, load_dict, NB_STEPS, STEPS_PE
 # Optional merge loads capability
 merge_map = {
     "Elec_Central": {
-        "columns_idx": list(range(1, len(df.columns))),
+        "columns_idx": list(range(1, 10)),
         "load_type": "load",
         "units": "MW"
         }
@@ -150,11 +150,12 @@ merge_map = {
 # Run merge loads function  (optional)
 df, load_dict = merge_loads(df, load_dict, merge_map, drop_originals=False)
 
-# Add vehicle data
-df, load_dict = generate_loads("Vehicles.csv", df, load_dict, NB_STEPS, STEPS_PER_DAY, profile_df)
 # Add data from renewables ninja
 df, load_dict = load_renewables("ninja_pv.csv", ["PV"], [2],
                                 df, load_dict, 1000000, load_type="Generation")
+# Solar Thermal estimated at 707 W/m2 at 20C vs. 250 W/m2 for PV which is 2.8 times more
+df, load_dict = load_renewables("ninja_pv.csv", ["Solar_Thermal"], [2],
+                                df, load_dict, 353606, load_type="Generation")
 df, load_dict = load_renewables("ninja_wind.csv", ["Wind"], [2],
                                 df, load_dict, 1000, load_type="Generation")
 df, load_dict = load_renewables("ninja_demand.csv", ["Heating_Central", "Cooling_Central"], [3, 4],
@@ -164,4 +165,4 @@ df, load_dict = load_renewables("ninja_demand.csv", ["Heating_Central", "Cooling
 df = add_headers(df, load_dict, START_DATE)
 
 # Save final DataFrame
-df.to_csv("Test3.csv", sep=";", index=False, header=False, float_format='%3g')
+df.to_csv("INDY_dataseries_Ede.csv", sep=";", index=False, header=False, float_format='%3g')
