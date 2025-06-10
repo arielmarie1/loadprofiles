@@ -10,6 +10,5 @@ Maintenance,0.15,1,load,MW
 Waste,0.2,4,load,MW
 ElecLoadVehicles,0.0285,8,load,MW
 H2LoadVehicles,2.357865837,8,Massflow,kg/h
-DieselLoadVehicles,7.852,8,Massflow,kg/hr
+DieselLoadVehicles,7.852,8,Massflow,kg/h
 CH4LoadVehicles,12.149,8,Massflow,kg/h
-
