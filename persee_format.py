@@ -6,7 +6,7 @@ class PerseeFormat:
     def __init__(self):
         pass
 
-    def load_renewables(self,filename, names, indices, dataframe, load_dictionary, divider,
+    def load_renewables(self, filename, names, indices, dataframe, load_dictionary, divider,
                         sep=",", skiprows=3, load_type="load", units="MW"):
         """
         Load data from a CSV file downloaded from Renewables Ninja.
@@ -28,7 +28,7 @@ class PerseeFormat:
             print(f"Error loading RE data: {e}")
             return None
 
-    def merge_loads(self,dataframe, load_dictionary, merge_mapping, drop_originals=True):
+    def merge_loads(self, dataframe, load_dictionary, merge_mapping, drop_originals=True):
         """
         Merge specified columns in the DataFrame and update the load_dictionary accordingly.
         Parameters:
@@ -64,7 +64,7 @@ class PerseeFormat:
 
         return dataframe, load_dictionary
 
-    def generate_loads(self,filename, dataframe, load_dictionary,
+    def generate_loads(self, filename, dataframe, load_dictionary,
                        nb_steps, steps_per_day, profile_dataframe,
                        rand_range=(1.0, 1.0)):
         """
@@ -107,7 +107,7 @@ class PerseeFormat:
             print(f"Error reading zone definitions from {filename}: {e}")
             return None
 
-    def add_headers(self,dataframe, load_dictionary, start_date):
+    def add_headers(self, dataframe, load_dictionary, start_date):
         # Row 1: Column Names (Time, followed by each zone)
         # Row 2: Description (example: start time for the start date for Time, and "load" for others)
         # Row 3: Units ("s" for time, "MW" for loads)
