@@ -28,7 +28,7 @@ merge_map = {
 base_df, base_load_dict = persee.merge_loads(base_df, base_load_dict, merge_map, drop_originals=False)
 
 # Add location specific data
-file_name = 'location_selection_ranking.csv'
+file_name = 'location_selection_global_atlas.csv'
 out_dir = "locations"
 os.makedirs(out_dir, exist_ok=True)
 out_path = os.path.join(out_dir, file_name)
