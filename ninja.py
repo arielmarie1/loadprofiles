@@ -22,9 +22,10 @@ class RenewableNinja:
     def _calc_date_range(self, start_date: str, duration: int):
         pass
 
-    def get_re_data(self, coords: tuple[float,float], re_type:str):
+    def get_re_data(self, coords: tuple[float, float], re_type:str):
         lat = coords[0]
         lon = coords[1]
+        # Helpful link to renewables.ninja api models: https://www.renewables.ninja/api/models
         if re_type == "pv":
             ext = 'data/pv'
             args = {
@@ -50,6 +51,16 @@ class RenewableNinja:
                 'capacity': 150,
                 'height': 30,
                 'turbine': 'Nordex N27 150',
+                'format': self.format_type
+            }
+        elif re_type == "weather":
+            ext = 'data/weather'
+            args = {
+                'lat': lat,
+                'lon': lon,
+                'date_from': '2019-01-01',
+                'date_to': '2019-12-31',
+                'var_t2m': True,  # Temperature
                 'format': self.format_type
             }
         else:

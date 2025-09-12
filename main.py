@@ -38,6 +38,7 @@ for loc, lat, lon in loc_sel.locations:
     pv_file = ninja.get_re_data((lat, lon), re_type="pv")
     wind_file = ninja.get_re_data((lat, lon), re_type="wind")
     demand_file = ninja.get_re_data((lat, lon), re_type="demand")
+    temp_file = ninja.get_re_data((lat, lon), re_type="weather")
     # Add data from renewables ninja
     df, load_dict = persee.load_renewables(pv_file, ["PV"], [1],
                                            base_df, base_load_dict, 1000000, load_type="Generation")
@@ -48,6 +49,8 @@ for loc, lat, lon in loc_sel.locations:
                                            df, load_dict, 1000, load_type="Generation")
     df, load_dict = persee.load_renewables(demand_file, ["Heating_Central", "Cooling_Central"], [2, 3],
                                            df, load_dict, 1000)
+    df, load_dict = persee.load_renewables(temp_file, ["Temperature"], [1], df, load_dict,
+                                           divider=1, load_type="Temperature", units="COP")
 
     # Add PERSEE required descriptive headers
     df = persee.add_headers(df, load_dict, START_DATE)
