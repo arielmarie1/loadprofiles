@@ -57,7 +57,7 @@ for loc, lat, lon in loc_sel.locations:
     df, load_dict = persee.load_renewables(temp_file, ["Temperature"], [1], df, load_dict,
                                            divider=1, load_type="temp", units="degC")
     df, load_dict = persee.load_renewables(cop_file, ["COP"], [0], dataframe=df, load_dictionary=load_dict,
-                                           divider=1, skiprows=0, load_type="COP", units="COP")
+                                           divider=1, skiprows=0, load_type="COP", units="-")
     print(loc)
     print(f"Average Temperature: {temps.t_avg}")
     print(f"Summer Average Temperature: {temps.summer_avg}")
