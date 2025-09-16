@@ -43,20 +43,6 @@ for loc, lat, lon in loc_sel.locations:
     temp_file = ninja.get_re_data((lat, lon), re_type="weather")
     temps = Temperatures(temp_file, loc=loc, coords=(lat, lon))
     cop_file = temps.cop_series_to_csv()
-    print(loc)
-    print(f"Average Temperature: {temps.t_avg}")
-    print(f"Summer Average Temperature: {temps.summer_avg}")
-    print(f"Winter Average Temperature: {temps.winter_avg}")
-    print(f"COP Average Temperature: {temps.cop_avg}")
-    loc_results.append({
-        "loc": loc,
-        "lat": lat,
-        "lon": lon,
-        "avg_temp": temps.t_avg,
-        "avg_summer": temps.summer_avg,
-        "avg_winter": temps.winter_avg,
-        "avg_cop": temps.cop_avg
-    })
 
     # Add data from renewables ninja
     df, load_dict = persee.load_renewables(pv_file, ["PV"], [1],
@@ -72,6 +58,26 @@ for loc, lat, lon in loc_sel.locations:
                                            divider=1, load_type="temp", units="degC")
     df, load_dict = persee.load_renewables(cop_file, ["COP"], [0], dataframe=df, load_dictionary=load_dict,
                                            divider=1, skiprows=0, load_type="COP", units="COP")
+    print(loc)
+    print(f"Average Temperature: {temps.t_avg}")
+    print(f"Summer Average Temperature: {temps.summer_avg}")
+    print(f"Winter Average Temperature: {temps.winter_avg}")
+    print(f"COP Average Temperature: {temps.cop_avg}")
+    print(f"Electricity Average (MW): {df["Elec_Central"].mean()}")
+    print(f"Heating Average (MW): {df.loc[df['Heating_Central'] > 0, "Heating_Central"].mean()}")
+    print(f"Cooling Average (MW): {df.loc[df['Cooling_Central'] > 0, "Cooling_Central"].mean()}")
+    loc_results.append({
+        "loc": loc,
+        "lat": lat,
+        "lon": lon,
+        "avg_temp": temps.t_avg,
+        "avg_summer": temps.summer_avg,
+        "avg_winter": temps.winter_avg,
+        "avg_cop": temps.cop_avg,
+        "elec_avg": df["Elec_Central"].mean(),
+        "heating_avg": df.loc[df['Heating_Central'] > 0, "Heating_Central"].mean(),
+        "cooling_avg": df.loc[df['Cooling_Central'] > 0, "Cooling_Central"].mean()
+    })
 
     # Add PERSEE required descriptive headers
     df = persee.add_headers(df, load_dict, START_DATE)
