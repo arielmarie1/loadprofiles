@@ -3,13 +3,14 @@ import hplib.hplib as hpl
 
 
 class Temperatures:
-    def __init__(self, filename, coords: tuple[float, float]):
+    def __init__(self, filename, loc, coords: tuple[float, float]):
         self.lat = coords[0]
         self.lon = coords[1]
+        self.loc = loc
         self.filename = filename
 
-        self._hplib_temps()
         self._load_temp()
+        self._hplib_temps()
         self._avg_temp()
         self._seasonal_avg()
 
@@ -53,3 +54,8 @@ class Temperatures:
             self.summer_avg = winter["t2m"].mean()
             self.winter_avg = summer["t2m"].mean()
         return self.summer_avg, self.winter_avg
+
+    def cop_series_to_csv(self, folder="re_ninja"):
+        cop_path = f"{folder}/COP_{self.loc}.csv"
+        self.cop_series.to_csv(cop_path, index=False, header=["COP"])
+        return cop_path
