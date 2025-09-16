@@ -3,6 +3,7 @@ import os
 from persee_format import PerseeFormat
 from ninja import RenewableNinja
 from location_selection import LocationSelection
+from temperatures import Temperatures
 
 START_DATE = '2025-01-01 00:00'
 SEC_INTERVAL = 3600  # Measured in seconds
@@ -33,12 +34,30 @@ out_dir = "locations"
 os.makedirs(out_dir, exist_ok=True)
 out_path = os.path.join(out_dir, file_name)
 loc_sel = LocationSelection(out_path)
+loc_results = []
 for loc, lat, lon in loc_sel.locations:
     ninja = RenewableNinja(location_name=loc)
     pv_file = ninja.get_re_data((lat, lon), re_type="pv")
     wind_file = ninja.get_re_data((lat, lon), re_type="wind")
     demand_file = ninja.get_re_data((lat, lon), re_type="demand")
     temp_file = ninja.get_re_data((lat, lon), re_type="weather")
+    temps = Temperatures(temp_file, loc=loc, coords=(lat, lon))
+    cop_file = temps.cop_series_to_csv()
+    print(loc)
+    print(f"Average Temperature: {temps.t_avg}")
+    print(f"Summer Average Temperature: {temps.summer_avg}")
+    print(f"Winter Average Temperature: {temps.winter_avg}")
+    print(f"COP Average Temperature: {temps.cop_avg}")
+    loc_results.append({
+        "loc": loc,
+        "lat": lat,
+        "lon": lon,
+        "avg_temp": temps.t_avg,
+        "avg_summer": temps.summer_avg,
+        "avg_winter": temps.winter_avg,
+        "avg_cop": temps.cop_avg
+    })
+
     # Add data from renewables ninja
     df, load_dict = persee.load_renewables(pv_file, ["PV"], [1],
                                            base_df, base_load_dict, 1000000, load_type="Generation")
@@ -50,7 +69,9 @@ for loc, lat, lon in loc_sel.locations:
     df, load_dict = persee.load_renewables(demand_file, ["Heating_Central", "Cooling_Central"], [2, 3],
                                            df, load_dict, 1000)
     df, load_dict = persee.load_renewables(temp_file, ["Temperature"], [1], df, load_dict,
-                                           divider=1, load_type="Temperature", units="COP")
+                                           divider=1, load_type="temp", units="degC")
+    df, load_dict = persee.load_renewables(cop_file, ["COP"], [0], dataframe=df, load_dictionary=load_dict,
+                                           divider=1, skiprows=0, load_type="COP", units="COP")
 
     # Add PERSEE required descriptive headers
     df = persee.add_headers(df, load_dict, START_DATE)
@@ -61,3 +82,8 @@ for loc, lat, lon in loc_sel.locations:
     out_path = os.path.join(out_dir, f"INDY_{ninja.location_name}_dataseries.csv")
     df.to_csv(out_path, sep=";", index=False, header=False, float_format='%3g')
     print(f"Saved dataseries to {out_path}")
+
+loc_averages = pd.DataFrame(loc_results)
+averages_path = "locations/location_averages.csv"
+loc_averages.to_csv(averages_path, index=False)
+print(f"Saved location average values to {averages_path}")
