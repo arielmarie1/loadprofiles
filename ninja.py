@@ -1,4 +1,5 @@
 import requests
+import time
 from dotenv import load_dotenv
 import os
 
@@ -22,7 +23,7 @@ class RenewableNinja:
     def _calc_date_range(self, start_date: str, duration: int):
         pass
 
-    def get_re_data(self, coords: tuple[float, float], re_type:str):
+    def get_re_data(self, coords: tuple[float, float], re_type: str, use_cache: bool = True):
         lat = coords[0]
         lon = coords[1]
         # Helpful link to renewables.ninja api models: https://www.renewables.ninja/api/models
@@ -85,8 +86,6 @@ class RenewableNinja:
             }
 
         url = self.api_base + ext
-        response = self.s.get(url, params=args)
-        response.raise_for_status()
 
         if self.format_type == 'csv':
             fname = f"ninja_{re_type}_{self.location_name}.{self.format_type}"
@@ -94,10 +93,22 @@ class RenewableNinja:
             os.makedirs(out_dir, exist_ok=True)
             out_path = os.path.join(out_dir, fname)
 
+            if use_cache and os.path.exists(out_path):
+                print(f"[Renewables Ninja] Using cached file: {out_path}")
+                return out_path
+
+            response = self.s.get(url, params=args)
+            response.raise_for_status()
+            time.sleep(1.0)
+
             with open(out_path, 'w') as f:
                 f.write(response.text)
+            print(f"[Renewables Ninja] Saved: {out_path}")
             return out_path
 
         elif self.format_type == 'json':
+            response = self.s.get(url, params=args)
+            response.raise_for_status()
+            time.sleep(1.0)
             data = response.json()
             print(data)

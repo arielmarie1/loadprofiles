@@ -47,9 +47,13 @@ for loc, lat, lon, zone in loc_sel.locations:
     elec = ElectricityMaps(location_name=loc)
     elec_price_file = elec.fetch_electricity_prices(zone=zone)
 
+    # Use same electricity data for all locations
+    df = base_df.copy(deep=True)
+    load_dict = base_load_dict.copy()
+
     # Add data from renewables ninja
     df, load_dict = persee.load_renewables(pv_file, ["PV"], [1],
-                                           base_df, base_load_dict, 1000000, load_type="Generation")
+                                           df, load_dict, 1000000, load_type="Generation")
     # Solar Thermal estimated at 707 W/m2 at 20C vs. 250 W/m2 for PV which is 2.8 times more
     df, load_dict = persee.load_renewables(pv_file, ["Solar_Thermal"], [1],
                                            df, load_dict, 353606, load_type="Generation")
@@ -75,6 +79,8 @@ for loc, lat, lon, zone in loc_sel.locations:
     print(f"Electricity Average (MW): {df["Elec_Central"].mean()}")
     print(f"Heating Average (MW): {df.loc[df['Heating_Central'] > 0, "Heating_Central"].mean()}")
     print(f"Cooling Average (MW): {df.loc[df['Cooling_Central'] > 0, "Cooling_Central"].mean()}")
+    price_avg = df["Price"].mean() if "Price" in df.columns else float("nan")
+    print(f"Electricity Prices Average (EUR/MWh): {price_avg}")
     loc_results.append({
         "loc": loc,
         "lat": lat,
@@ -85,7 +91,8 @@ for loc, lat, lon, zone in loc_sel.locations:
         "avg_cop": temps.cop_avg,
         "elec_avg": df["Elec_Central"].mean(),
         "heating_avg": df.loc[df['Heating_Central'] > 0, "Heating_Central"].mean(),
-        "cooling_avg": df.loc[df['Cooling_Central'] > 0, "Cooling_Central"].mean()
+        "cooling_avg": df.loc[df['Cooling_Central'] > 0, "Cooling_Central"].mean(),
+        "elec_price_avg": price_avg
     })
 
     # Add PERSEE required descriptive headers

@@ -23,7 +23,15 @@ class ElectricityMaps:
         self.s = requests.session()
         self.s.headers = {"auth-token": token}
 
-    def fetch_electricity_prices(self, zone, sel_year: int = 2019):
+    def fetch_electricity_prices(self, zone, sel_year: int = 2019, use_cache: bool = True):
+        out_dir = "electricity_prices"
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, f"elec_price_{sel_year}_{self.location_name}.csv")
+
+        if use_cache and os.path.exists(out_path):
+            print(f"[ElectricityMaps] Using cached file: {out_path}")
+            return out_path
+
         url = self.api_base + 'v3/price-day-ahead/past-range'
 
         start = datetime(sel_year, 1, 1, 0, 0, tzinfo=timezone.utc)
@@ -52,9 +60,7 @@ class ElectricityMaps:
 
         df = pd.DataFrame(prices)
         df = df[["datetime", "value", "unit"]].rename(columns={"datetime": "time"})
-
-        out_dir = "electricity_prices"
-        os.makedirs(out_dir, exist_ok=True)
-        out_path = os.path.join(out_dir, f"elec_price_{sel_year}_{self.location_name}.csv")
         df.to_csv(out_path, index=False)
+        print(f"[Electricity Maps] Saved: {out_path}")
+
         return out_path
