@@ -6,64 +6,6 @@ class PerseeFormat:
     def __init__(self):
         pass
 
-    def load_renewables(self, filename, names, indices, dataframe, load_dictionary, divider,
-                        sep=",", skiprows=3, load_type="load", units="MW"):
-        """
-        Load data from a CSV file downloaded from Renewables Ninja.
-        Assumes the file has header rows to skip and that column C (index 2, 3 or 4)
-        contains the "electricity" data in Watts or kW, which must be converted to MW using divider value.
-        """
-        try:
-            df_re = pd.read_csv(filename, sep=sep, skiprows=skiprows)
-            for name, idx in zip(names, indices):
-                dataframe[name] = df_re.iloc[:, idx] / float(divider)
-                load_dictionary[name] = {
-                    "max_power": None,  # Not used in header creation
-                    "profile": None,  # Not used in header creation
-                    "load_type": load_type,
-                    "units": units
-                }
-            return dataframe, load_dictionary
-        except Exception as e:
-            print(f"Error loading RE data: {e}")
-            return None
-
-    def merge_loads(self, dataframe, load_dictionary, merge_mapping, drop_originals=True):
-        """
-        Merge specified columns in the DataFrame and update the load_dictionary accordingly.
-        Parameters:
-            dataframe (pd.DataFrame): DataFrame containing the load data.
-            load_dictionary (dict): Dictionary with load definitions for header creation.
-            merge_mapping (dict): Mapping where each key is the new column name, and its value is a dict:
-                - "columns": list of existing columns to merge.
-                - "load_type": description for the new column header.
-                - "units": units for the new column header.
-        Returns:
-            Tuple (updated DataFrame, updated load_dict)
-        """
-        for new_col, merge_info in merge_mapping.items():
-            # Map provided gives column indices
-            cols_to_merge = [dataframe.columns[j] for j in merge_info["columns_idx"]]
-            # Sum the specified columns row-wise to create the new merged column
-            dataframe[new_col] = dataframe[cols_to_merge].sum(axis=1)
-            # Add the new merged column to load_dict with the provided header info
-            load_dictionary[new_col] = {
-                "max_power": None,    # Not used in header creation
-                "profile": None,      # Not used in header creation
-                "load_type": merge_info.get("load_type", "load"),
-                "units": merge_info.get("units", "MW")
-            }
-            if drop_originals:
-                # Remove the original columns from the DataFrame
-                dataframe.drop(columns=cols_to_merge, inplace=True)
-
-                # Remove the original columns from load_dict (if they exist)
-                for col in cols_to_merge:
-                    if col in load_dictionary:
-                        del load_dictionary[col]
-
-        return dataframe, load_dictionary
-
     def generate_loads(self, filename, dataframe, load_dictionary,
                        nb_steps, steps_per_day, profile_dataframe,
                        rand_range=(1.0, 1.0)):
@@ -105,6 +47,64 @@ class PerseeFormat:
             return dataframe, load_dictionary
         except Exception as e:
             print(f"Error reading zone definitions from {filename}: {e}")
+            return None
+
+    def merge_loads(self, dataframe, load_dictionary, merge_mapping, drop_originals=True):
+        """
+        Merge specified columns in the DataFrame and update the load_dictionary accordingly.
+        Parameters:
+            dataframe (pd.DataFrame): DataFrame containing the load data.
+            load_dictionary (dict): Dictionary with load definitions for header creation.
+            merge_mapping (dict): Mapping where each key is the new column name, and its value is a dict:
+                - "columns": list of existing columns to merge.
+                - "load_type": description for the new column header.
+                - "units": units for the new column header.
+        Returns:
+            Tuple (updated DataFrame, updated load_dict)
+        """
+        for new_col, merge_info in merge_mapping.items():
+            # Map provided gives column indices
+            cols_to_merge = [dataframe.columns[j] for j in merge_info["columns_idx"]]
+            # Sum the specified columns row-wise to create the new merged column
+            dataframe[new_col] = dataframe[cols_to_merge].sum(axis=1)
+            # Add the new merged column to load_dict with the provided header info
+            load_dictionary[new_col] = {
+                "max_power": None,    # Not used in header creation
+                "profile": None,      # Not used in header creation
+                "load_type": merge_info.get("load_type", "load"),
+                "units": merge_info.get("units", "MW")
+            }
+            if drop_originals:
+                # Remove the original columns from the DataFrame
+                dataframe.drop(columns=cols_to_merge, inplace=True)
+
+                # Remove the original columns from load_dict (if they exist)
+                for col in cols_to_merge:
+                    if col in load_dictionary:
+                        del load_dictionary[col]
+
+        return dataframe, load_dictionary
+
+    def load_renewables(self, filename, names, indices, dataframe, load_dictionary, divider,
+                        sep=",", skiprows=3, load_type="load", units="MW"):
+        """
+        Load data from a CSV file downloaded from Renewables Ninja.
+        Assumes the file has header rows to skip and that column C (index 2, 3 or 4)
+        contains the "electricity" data in Watts or kW, which must be converted to MW using divider value.
+        """
+        try:
+            df_re = pd.read_csv(filename, sep=sep, skiprows=skiprows)
+            for name, idx in zip(names, indices):
+                dataframe[name] = df_re.iloc[:, idx] / float(divider)
+                load_dictionary[name] = {
+                    "max_power": None,  # Not used in header creation
+                    "profile": None,  # Not used in header creation
+                    "load_type": load_type,
+                    "units": units
+                }
+            return dataframe, load_dictionary
+        except Exception as e:
+            print(f"Error loading RE data: {e}")
             return None
 
     def load_elec_prices(self,
