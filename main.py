@@ -4,6 +4,7 @@ from persee_format import PerseeFormat
 from ninja import RenewableNinja
 from location_selection import LocationSelection
 from temperatures import Temperatures
+from electricitymaps_api import ElectricityMaps
 
 START_DATE = '2025-01-01 00:00'
 SEC_INTERVAL = 3600  # Measured in seconds
@@ -35,7 +36,7 @@ os.makedirs(out_dir, exist_ok=True)
 out_path = os.path.join(out_dir, file_name)
 loc_sel = LocationSelection(out_path)
 loc_results = []
-for loc, lat, lon in loc_sel.locations:
+for loc, lat, lon, zone in loc_sel.locations:
     ninja = RenewableNinja(location_name=loc)
     pv_file = ninja.get_re_data((lat, lon), re_type="pv")
     wind_file = ninja.get_re_data((lat, lon), re_type="wind")
@@ -43,6 +44,8 @@ for loc, lat, lon in loc_sel.locations:
     temp_file = ninja.get_re_data((lat, lon), re_type="weather")
     temps = Temperatures(temp_file, loc=loc, coords=(lat, lon))
     cop_file = temps.cop_series_to_csv()
+    elec = ElectricityMaps(location_name=loc)
+    elec_price_file = elec.fetch_electricity_prices(zone=zone)
 
     # Add data from renewables ninja
     df, load_dict = persee.load_renewables(pv_file, ["PV"], [1],
@@ -58,6 +61,9 @@ for loc, lat, lon in loc_sel.locations:
                                            divider=1, load_type="temp", units="degC")
     df, load_dict = persee.load_renewables(cop_file, ["COP"], [0], dataframe=df, load_dictionary=load_dict,
                                            divider=1, skiprows=0, load_type="COP", units="-")
+    # Add data from electricity maps app
+    df, load_dict = persee.load_elec_prices(elec_price_file, df, load_dict)
+
     print(loc)
     print(f"Average Temperature: {temps.t_avg}")
     print(f"Summer Average Temperature: {temps.summer_avg}")

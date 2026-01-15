@@ -107,6 +107,27 @@ class PerseeFormat:
             print(f"Error reading zone definitions from {filename}: {e}")
             return None
 
+    def load_elec_prices(self,
+                         filename: str,
+                         dataframe, load_dictionary,
+                         name: str = "Price",
+                         sep=",",
+                         load_type="prices",
+                         units="EUR"):
+        try:
+            df_prices = pd.read_csv(filename, sep=sep)
+            dataframe[name] = df_prices.iloc[:, 1]
+            load_dictionary[name] = {
+                "max_power": None,  # Not used in header creation
+                "profile": None,  # Not used in header creation
+                "load_type": load_type,
+                "units": units
+            }
+            return dataframe, load_dictionary
+        except Exception as e:
+            print(f"Error loading RE data: {e}")
+            return None
+
     def add_headers(self, dataframe, load_dictionary, start_date):
         # Row 1: Column Names (Time, followed by each zone)
         # Row 2: Description (example: start time for the start date for Time, and "load" for others)
