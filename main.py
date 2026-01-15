@@ -62,7 +62,10 @@ for loc, lat, lon, zone in loc_sel.locations:
     df, load_dict = persee.load_renewables(cop_file, ["COP"], [0], dataframe=df, load_dictionary=load_dict,
                                            divider=1, skiprows=0, load_type="COP", units="-")
     # Add data from electricity maps app
-    df, load_dict = persee.load_elec_prices(elec_price_file, df, load_dict)
+    if elec_price_file is not None:
+        df, load_dict = persee.load_elec_prices(elec_price_file, df, load_dict)
+    else:
+        print(f"No price coverage for zone {zone}; skipping electricity prices timeseries")
 
     print(loc)
     print(f"Average Temperature: {temps.t_avg}")

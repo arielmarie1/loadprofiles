@@ -43,6 +43,8 @@ class ElectricityMaps:
             }
 
             r = self.s.get(url, params=args)
+            if r.status_code == 404:
+                return None
             r.raise_for_status()
             prices.extend(r.json()["data"])
             current = nxt
