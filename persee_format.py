@@ -110,10 +110,10 @@ class PerseeFormat:
     def load_elec_prices(self,
                          filename: str,
                          dataframe, load_dictionary,
-                         name: str = "Price",
+                         name: str = "GridPrice",
                          sep=",",
-                         load_type="prices",
-                         units="EUR"):
+                         load_type="Price",
+                         units="EUR/MWh"):
         try:
             df_prices = pd.read_csv(filename, sep=sep)
             dataframe[name] = df_prices.iloc[:, 1]
